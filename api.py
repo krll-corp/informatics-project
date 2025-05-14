@@ -1,9 +1,8 @@
-from flask import jsonify, Flask
+import fastapi
+from flask import jsonify
 
-app = Flask(__name__)
+app = fastapi.FastAPI()
 
-@app.route('/api')
-def foo():
-    return jsonify("hello world")
-
-app.run(host="0.0.0.0", port=1234)
+@app.get("/")
+async def hello():
+    jsonify({"Hello, World!"})
