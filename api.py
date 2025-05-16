@@ -5,4 +5,4 @@ app = fastapi.FastAPI()
 
 @app.get("/")
 async def hello():
-    jsonify({"Hello, World!"})
+    return jsonify({"Hello, World!"})
