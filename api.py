@@ -25,7 +25,7 @@ async def post(data: dict):
 async def get():
     return fastapi.responses.JSONResponse({"message": message_buffer})
 
-@app.get("getHash")
+@app.get("/getHash")
 async def get_hash():
     import hashlib
-    return fastapi.responses.JSONResponse({"hash": "{hashlib:sha256().hexdigest()}"})
+    return fastapi.responses.JSONResponse({"hash": "{hashlib.sha256().hexdigest()}"})
