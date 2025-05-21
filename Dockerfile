@@ -1,11 +1,11 @@
 FROM python:3.13.3
 
 COPY api.py /server/
-COPY cert.pem key.pem /server/
 
 RUN pip3 install fastapi uvicorn flask
 RUN openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
 
+COPY cert.pem key.pem /server/
 WORKDIR /server
 EXPOSE 8000
 
