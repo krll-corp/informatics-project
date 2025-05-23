@@ -3,6 +3,8 @@ import os
 
 app = fastapi.FastAPI()
 
+states=[]
+
 @app.get("/")
 async def hello():
     return fastapi.responses.JSONResponse({"message": "Hello, World!"})
