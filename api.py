@@ -30,4 +30,4 @@ async def get():
 @app.get("/getHash")
 async def get_hash():
     import hashlib
-    return fastapi.responses.JSONResponse({"hash": "{hashlib.sha256().hexdigest()}"})
+    return fastapi.responses.JSONResponse({"hash": f"{hashlib.sha256().hexdigest()}"})
