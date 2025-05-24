@@ -2,70 +2,209 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
-public class PlayerMovement : MonoBehaviour
+[RequireComponent(typeof(CapsuleCollider))]
+public class PlayerControllerRigidbody : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float moveSpeed = 5f;
+    public float moveSpeed = 8f;
+    public float maxVelocityChange = 10f; // For AddForce method if you prefer acceleration
     public float jumpForce = 5f;
-    public float groundCheckDistance = 0.1f;
-    public LayerMask groundMask;
 
-    private Rigidbody rb;
+    [Header("Look Settings")]
+    public Transform playerCamera;
+    public float lookSensitivity = 0.1f;
+    public float verticalLookLimit = 80f;
+
+    [Header("Ground Check")]
+    public Transform groundCheckPoint; // An empty GameObject at the player's feet
+    public float groundCheckRadius = 0.2f;
+    public LayerMask groundLayer; // Set this to your ground layer in the Inspector
+
+    private Rigidbody _rigidbody;
     private InputSystem_Actions inputActions;
-    private Vector2 inputMove;
-    private bool jumpRequested;
+    private Vector2 _moveInput;
+    private Vector2 _lookInput;
+    private float _cameraPitch = 0f;
+    private bool _isGrounded;
+
+    // Choose one movement style
+    public enum MovementStyle
+    {
+        SetVelocity,
+        AddForce
+    }
+    public MovementStyle movementStyle = MovementStyle.SetVelocity;
+
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        _rigidbody = GetComponent<Rigidbody>();
         inputActions = new InputSystem_Actions();
 
-        // Movement
-        inputActions.Player.Move.performed += ctx => inputMove = ctx.ReadValue<Vector2>();
-        inputActions.Player.Move.canceled += ctx => inputMove = Vector2.zero;
 
-        // Jump
-        inputActions.Player.Jump.performed += ctx => jumpRequested = true;
+        if (playerCamera == null && Camera.main != null)
+        {
+            playerCamera = Camera.main.transform;
+            Debug.LogWarning("Player Camera not assigned. Attempting to use Main Camera. For best results, assign it manually.");
+        }
+
+        if (groundCheckPoint == null)
+        {
+            // Create a default ground check point if none is assigned
+            GameObject gcp = new GameObject("GroundCheckPoint");
+            gcp.transform.SetParent(transform);
+            gcp.transform.localPosition = new Vector3(0, -GetComponent<CapsuleCollider>().height / 2 + 0.01f, 0); // Adjust based on collider
+            groundCheckPoint = gcp.transform;
+            Debug.LogWarning("GroundCheckPoint not assigned. Created a default one. Adjust its position if needed.");
+        }
+
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void OnEnable()
     {
-        inputActions.Enable();
+        inputActions.Player.Enable();
+
+        inputActions.Player.Move.performed += OnMovePerformed;
+        inputActions.Player.Move.canceled += OnMoveCanceled;
+
+        inputActions.Player.Look.performed += OnLookPerformed;
+        inputActions.Player.Look.canceled += OnLookCanceled;
+
+        inputActions.Player.Jump.performed += OnJumpPerformed;
     }
 
     private void OnDisable()
     {
-        inputActions.Disable();
+        inputActions.Player.Disable();
+
+        inputActions.Player.Move.performed -= OnMovePerformed;
+        inputActions.Player.Move.canceled -= OnMoveCanceled;
+
+        inputActions.Player.Look.performed -= OnLookPerformed;
+        inputActions.Player.Look.canceled -= OnLookCanceled;
+
+        inputActions.Player.Jump.performed -= OnJumpPerformed;
+    }
+
+    private void Update()
+    {
+        HandleLooking();
     }
 
     private void FixedUpdate()
     {
-        Move();
-        if (jumpRequested && IsGrounded())
+        PerformGroundCheck();
+        HandleMovement();
+    }
+
+    // --- Input Action Callbacks ---
+    private void OnMovePerformed(InputAction.CallbackContext context)
+    {
+        _moveInput = context.ReadValue<Vector2>();
+    }
+
+    private void OnMoveCanceled(InputAction.CallbackContext context)
+    {
+        _moveInput = Vector2.zero;
+    }
+
+    private void OnLookPerformed(InputAction.CallbackContext context)
+    {
+        _lookInput = context.ReadValue<Vector2>();
+    }
+
+    private void OnLookCanceled(InputAction.CallbackContext context)
+    {
+        _lookInput = Vector2.zero;
+    }
+
+    private void OnJumpPerformed(InputAction.CallbackContext context)
+    {
+        if (_isGrounded)
         {
-            Debug.Log("Jump");
-            Jump();
+            _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
-        jumpRequested = false; // Reset after processing
     }
 
-    private void Move()
+    // --- Core Logic ---
+
+    private void PerformGroundCheck()
     {
-        Vector3 direction = new Vector3(inputMove.x, 0f, inputMove.y);
-        Vector3 worldDirection = transform.TransformDirection(direction);
-        Vector3 velocity = new Vector3(worldDirection.x * moveSpeed, rb.linearVelocity.y, worldDirection.z * moveSpeed);
-        rb.linearVelocity = velocity;
+        if (groundCheckPoint != null)
+        {
+            _isGrounded = Physics.CheckSphere(groundCheckPoint.position, groundCheckRadius, groundLayer, QueryTriggerInteraction.Ignore);
+        }
+        else
+        {
+            _isGrounded = false;
+        }
     }
 
-    private void Jump()
+    private void HandleMovement()
     {
-        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        // Calculate movement direction based on player's forward and right vectors
+        Vector3 moveDirection = transform.forward * _moveInput.y + transform.right * _moveInput.x;
+        moveDirection.Normalize(); // Ensure consistent speed if moving diagonally
+
+        if (movementStyle == MovementStyle.SetVelocity)
+        {
+            // --- Method 1: Setting Velocity Directly ---
+            // Preserves current vertical velocity (gravity)
+            Vector3 targetVelocity = moveDirection * moveSpeed;
+            _rigidbody.linearVelocity = new Vector3(targetVelocity.x, _rigidbody.linearVelocity.y, targetVelocity.z);
+        }
+        else if (movementStyle == MovementStyle.AddForce)
+        {
+            // --- Method 2: Adding Force (more physics-based acceleration) ---
+            // Calculate how much to accelerate to reach target velocity
+            Vector3 targetVelocity = moveDirection * moveSpeed;
+            Vector3 velocityChange = (targetVelocity - new Vector3(_rigidbody.linearVelocity.x, 0, _rigidbody.linearVelocity.z)); // Ignore Y for velocity change calculation
+            velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
+            velocityChange.z = Mathf.Clamp(velocityChange.z, -maxVelocityChange, maxVelocityChange);
+            velocityChange.y = 0; // We only want to affect horizontal movement force
+
+            if (_isGrounded) // Apply more force when grounded for responsiveness
+            {
+                _rigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
+            }
+            else // Less air control (optional)
+            {
+                _rigidbody.AddForce(velocityChange * 0.5f, ForceMode.VelocityChange); // Example: 50% air control
+            }
+        }
     }
 
-    private bool IsGrounded()
+    private void HandleLooking()
     {
-        bool rayc = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance + 1.1f, groundMask);
-        Debug.Log(rayc);
-        return rayc;
+        if (playerCamera == null) return;
+
+        // Horizontal rotation (yaw) - applied to the player Rigidbody itself
+        float mouseX = _lookInput.x * lookSensitivity;
+        // Directly rotate the Rigidbody for player body rotation
+        // Note: This is a kinematic rotation. If you want physics-based turning, you'd use AddTorque.
+        // For typical FPS controllers, direct rotation is common.
+        Quaternion deltaRotation = Quaternion.Euler(Vector3.up * mouseX);
+        _rigidbody.MoveRotation(_rigidbody.rotation * deltaRotation);
+
+
+        // Vertical rotation (pitch) - applied to the camera
+        float mouseY = _lookInput.y * lookSensitivity;
+        _cameraPitch -= mouseY;
+        _cameraPitch = Mathf.Clamp(_cameraPitch, -verticalLookLimit, verticalLookLimit);
+
+        playerCamera.localEulerAngles = new Vector3(_cameraPitch, 0f, 0f);
+    }
+
+    // Optional: Draw gizmo for ground check visualization in editor
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheckPoint != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(groundCheckPoint.position, groundCheckRadius);
+        }
     }
 }
