@@ -1,9 +1,10 @@
+using Polyperfect.Universal;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
-public class PlayerControllerRigidbody : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 8f;
@@ -29,6 +30,8 @@ public class PlayerControllerRigidbody : MonoBehaviour
     private bool _isGrounded;
     private float _trueSprintMult = 1f;
 
+    public static PlayerMovement Instance;
+
     // Choose one movement style
     public enum MovementStyle
     {
@@ -40,6 +43,8 @@ public class PlayerControllerRigidbody : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+
         _rigidbody = GetComponent<Rigidbody>();
         inputActions = new InputSystem_Actions();
 
