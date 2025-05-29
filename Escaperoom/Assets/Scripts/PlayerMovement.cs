@@ -7,6 +7,7 @@ public class PlayerControllerRigidbody : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 8f;
+    public float sprintMult = 1.5f;
     public float maxVelocityChange = 10f; // For AddForce method if you prefer acceleration
     public float jumpForce = 5f;
 
@@ -26,6 +27,7 @@ public class PlayerControllerRigidbody : MonoBehaviour
     private Vector2 _lookInput;
     private float _cameraPitch = 0f;
     private bool _isGrounded;
+    private float _trueSprintMult = 1f;
 
     // Choose one movement style
     public enum MovementStyle
@@ -74,6 +76,9 @@ public class PlayerControllerRigidbody : MonoBehaviour
         inputActions.Player.Look.canceled += OnLookCanceled;
 
         inputActions.Player.Jump.performed += OnJumpPerformed;
+
+        inputActions.Player.Sprint.performed += OnSprintPerformed;
+        inputActions.Player.Sprint.canceled += OnSprintCanceled;
     }
 
     private void OnDisable()
@@ -109,6 +114,16 @@ public class PlayerControllerRigidbody : MonoBehaviour
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
         _moveInput = Vector2.zero;
+    }
+
+    private void OnSprintPerformed(InputAction.CallbackContext context)
+    {
+        _trueSprintMult = sprintMult;
+    }
+
+    private void OnSprintCanceled(InputAction.CallbackContext context)
+    {
+        _trueSprintMult = 1f;
     }
 
     private void OnLookPerformed(InputAction.CallbackContext context)
@@ -153,14 +168,14 @@ public class PlayerControllerRigidbody : MonoBehaviour
         {
             // --- Method 1: Setting Velocity Directly ---
             // Preserves current vertical velocity (gravity)
-            Vector3 targetVelocity = moveDirection * moveSpeed;
+            Vector3 targetVelocity = moveDirection * (moveSpeed * _trueSprintMult);
             _rigidbody.linearVelocity = new Vector3(targetVelocity.x, _rigidbody.linearVelocity.y, targetVelocity.z);
         }
         else if (movementStyle == MovementStyle.AddForce)
         {
             // --- Method 2: Adding Force (more physics-based acceleration) ---
             // Calculate how much to accelerate to reach target velocity
-            Vector3 targetVelocity = moveDirection * moveSpeed;
+            Vector3 targetVelocity = moveDirection * (moveSpeed * _trueSprintMult);
             Vector3 velocityChange = (targetVelocity - new Vector3(_rigidbody.linearVelocity.x, 0, _rigidbody.linearVelocity.z)); // Ignore Y for velocity change calculation
             velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
             velocityChange.z = Mathf.Clamp(velocityChange.z, -maxVelocityChange, maxVelocityChange);
@@ -170,7 +185,7 @@ public class PlayerControllerRigidbody : MonoBehaviour
             {
                 _rigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
             }
-            else // Less air control (optional)
+            else // Less air control
             {
                 _rigidbody.AddForce(velocityChange * 0.5f, ForceMode.VelocityChange); // Example: 50% air control
             }
@@ -181,16 +196,14 @@ public class PlayerControllerRigidbody : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        // Horizontal rotation (yaw) - applied to the player Rigidbody itself
+        // Horizontal rotation (yaw)
         float mouseX = _lookInput.x * lookSensitivity;
-        // Directly rotate the Rigidbody for player body rotation
-        // Note: This is a kinematic rotation. If you want physics-based turning, you'd use AddTorque.
-        // For typical FPS controllers, direct rotation is common.
+
         Quaternion deltaRotation = Quaternion.Euler(Vector3.up * mouseX);
         _rigidbody.MoveRotation(_rigidbody.rotation * deltaRotation);
 
 
-        // Vertical rotation (pitch) - applied to the camera
+        // Vertical rotation (pitch)
         float mouseY = _lookInput.y * lookSensitivity;
         _cameraPitch -= mouseY;
         _cameraPitch = Mathf.Clamp(_cameraPitch, -verticalLookLimit, verticalLookLimit);
