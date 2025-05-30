@@ -5,7 +5,8 @@ import os
 
 app = fastapi.FastAPI()
 
-states=dict()
+states = []
+dummy_state = None
 
 @app.get("/")
 async def hello():
@@ -20,17 +21,28 @@ async def health():
 @app.post("/post")
 async def post(data: dict):
     try:
-        states[data.get("hash")] = data.get("state")
+        hash_value = data.get("hash")
+        state_value = data.get("state")
+        
+        for entry in states:
+            if entry.get("hash") == hash_value:
+                entry["state"] = state_value
+                return fastapi.responses.JSONResponse({"status": "ok"})
+        
+        states.append({"hash": hash_value, "state": state_value})
         return fastapi.responses.JSONResponse({"status": "ok"})
     except Exception as e:
         return fastapi.responses.JSONResponse({"status": "error", "message": str(e)}, status_code=400)
 
 @app.get("/get")
 async def get(hash: str = None):
-    return fastapi.responses.JSONResponse({"state": states.get(hash, "No state found")})
+    for entry in states:
+        if entry.get("hash") == hash:
+            return fastapi.responses.JSONResponse({"state": entry.get("state")})
+    return fastapi.responses.JSONResponse({"state": "No state found"})
 
 @app.get("/getHash")
 async def get_hash():
-    tmp = hashlib.sha512().hexdigest()
-    states[tmp] = {None: None}
+    tmp = hashlib.sha512(datetime.datetime.now()).hexdigest()
+    states.append({"hash": tmp, "state": dummy_state})
     return fastapi.responses.JSONResponse({"hash": f"{tmp}"})
