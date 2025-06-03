@@ -2,7 +2,7 @@ FROM python:3.13.3
 
 COPY api.py /server/
 
-RUN pip3 install fastapi uvicorn flask
+RUN pip3 install fastapi uvicorn
 
 WORKDIR /server
 EXPOSE 8000
