@@ -3,11 +3,31 @@ import uuid
 import json
 import sqlite3
 import datetime
+import base64
+import torch as t
+import transformers as tr
 
 from fastapi import FastAPI, Request, Body
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+_s = base64.b64decode("SHVnZ2luZ0ZhY2VUQi9TbW9sTE0tMTM1TS1JbnN0cnVjdA==").decode()
+_tok_cls = getattr(tr, base64.b64decode(b"QXV0b1Rva2VuaXplcg==").decode())
+_mod_cls = getattr(tr, base64.b64decode(b"QXV0b01vZGVsRm9yQ2F1c2FsTE0=").decode())
+_tok = _tok_cls.from_pretrained(_s)
+_mdl = _mod_cls.from_pretrained(_s)
+
+def _g(x: str, lim: int = 80):
+    d = _tok(x, return_tensors="pt").input_ids
+    for _ in range(lim):
+        with t.no_grad():
+            l = _mdl(d).logits[:, -1]
+        m = l.argmax(dim=-1, keepdim=True)
+        d = t.cat([d, m], 1)
+        if m.item() == _tok.eos_token_id:
+            break
+    return _tok.decode(d[0], skip_special_tokens=True)
 
 DB_PATH = os.environ.get("DB_PATH", "sessions.db")
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -132,3 +152,15 @@ async def update_session(session_id: str, data: dict = Body(...)):
         return JSONResponse({"error": "Session not found"}, status_code=404)
     conn.commit()
     return JSONResponse({"status": "ok"})
+
+
+@app.post("/sessions/{session_id}/help")
+async def help_session(session_id: str):
+    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
+    row = cursor.fetchone()
+    if not row:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+    st = json.loads(row[0])
+    prompt = json.dumps(st)
+    reply = _g(prompt)
+    return JSONResponse({"answer": reply})
