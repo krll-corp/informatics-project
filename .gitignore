@@ -25,3 +25,4 @@ replay_pid*
 
 
 *.vsconfig
+__pycache__/api.cpython-314.pyc

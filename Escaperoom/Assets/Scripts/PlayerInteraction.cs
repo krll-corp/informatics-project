@@ -30,22 +30,11 @@ public class PlayerInteraction : MonoBehaviour
 
     void OnClickPerformed(InputAction.CallbackContext context)
     {
+        GameObject sel = OutlineOnLook.Instance.selected;
 
-        RaycastHit hit;
-        // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, rayDisctance, layerMask))
-
+        if ( !(sel is null) )
         {
-            Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * hit.distance, Color.yellow, duration: 1);
-            Debug.Log("Did Hit");
-
-            hit.transform.gameObject.GetComponent<Clickable>().OnClick();
+            sel.GetComponent<Clickable>().OnClick();
         }
-        else
-        {
-            Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * 1000, Color.white, duration: 1);
-            Debug.Log("Did not Hit");
-        }
-
     }
 }
