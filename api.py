@@ -103,7 +103,7 @@ async def health():
 @app.post("/sessions")
 async def create_session():
     session_id = uuid.uuid4().hex
-    created_at = datetime.datetime.utcnow()
+    created_at = datetime.datetime.now()
     cursor.execute(
         "INSERT INTO sessions (hash, state, created_at) VALUES (?, ?, ?)",
         (session_id, json.dumps(None), created_at),
