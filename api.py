@@ -24,6 +24,14 @@ cursor.execute(
 )
 conn.commit()
 
+def merge_dict(base: dict, updates: dict) -> None:
+    """Recursively merge updates into base."""
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge_dict(base[key], value)
+        else:
+            base[key] = value
+
 def cleanup_sessions():
     cutoff = datetime.datetime.now() - datetime.timedelta(weeks=1) #datetime.timezone.utc
     cursor.execute("DELETE FROM sessions WHERE created_at <= ?", (cutoff,))
@@ -123,12 +131,33 @@ async def read_session(session_id: str):
 
 @app.post("/sessions/{session_id}")
 async def update_session(session_id: str, data: dict = Body(...)):
-    state_value = data.get("state")
+    """Update a session's game state with full or partial data."""
+    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
+    row = cursor.fetchone()
+    if not row:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    current_state = json.loads(row[0]) if row[0] else {}
+
+    # Determine the patch. If body only contains a "state" key, treat its value
+    # as the new state. Otherwise merge the provided keys into the existing
+    # state.
+    if "state" in data and len(data) == 1 and isinstance(data["state"], dict):
+        new_state = data["state"]
+    else:
+        patch = data.get("state", data)
+        if not isinstance(current_state, dict):
+            current_state = {}
+        if isinstance(patch, dict):
+            merge_dict(current_state, patch)
+            new_state = current_state
+        else:
+            # Non-dict payload replaces the whole state
+            new_state = patch
+
     cursor.execute(
         "UPDATE sessions SET state = ? WHERE hash = ?",
-        (json.dumps(state_value), session_id),
+        (json.dumps(new_state), session_id),
     )
-    if cursor.rowcount == 0:
-        return JSONResponse({"error": "Session not found"}, status_code=404)
     conn.commit()
     return JSONResponse({"status": "ok"})
