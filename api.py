@@ -131,29 +131,25 @@ async def read_session(session_id: str):
 
 @app.post("/sessions/{session_id}")
 async def update_session(session_id: str, data: dict = Body(...)):
-    """Update a session's game state with full or partial data."""
+    """Merge the provided values into the existing game state."""
     cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
     row = cursor.fetchone()
     if not row:
         return JSONResponse({"error": "Session not found"}, status_code=404)
 
     current_state = json.loads(row[0]) if row[0] else {}
+    if not isinstance(current_state, dict):
+        current_state = {}
 
-    # Determine the patch. If body only contains a "state" key, treat its value
-    # as the new state. Otherwise merge the provided keys into the existing
-    # state.
-    if "state" in data and len(data) == 1 and isinstance(data["state"], dict):
-        new_state = data["state"]
+    # Clients may POST either the raw state object or {"state": {...}} for
+    # backward compatibility. The data is always merged into the existing state.
+    patch = data.get("state", data)
+
+    if isinstance(patch, dict):
+        merge_dict(current_state, patch)
+        new_state = current_state
     else:
-        patch = data.get("state", data)
-        if not isinstance(current_state, dict):
-            current_state = {}
-        if isinstance(patch, dict):
-            merge_dict(current_state, patch)
-            new_state = current_state
-        else:
-            # Non-dict payload replaces the whole state
-            new_state = patch
+        new_state = patch
 
     cursor.execute(
         "UPDATE sessions SET state = ? WHERE hash = ?",
