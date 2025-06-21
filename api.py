@@ -24,6 +24,14 @@ cursor.execute(
 )
 conn.commit()
 
+def merge_dict(base: dict, updates: dict) -> None:
+    """Recursively merge updates into base."""
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge_dict(base[key], value)
+        else:
+            base[key] = value
+
 def cleanup_sessions():
     cutoff = datetime.datetime.now() - datetime.timedelta(weeks=1) #datetime.timezone.utc
     cursor.execute("DELETE FROM sessions WHERE created_at <= ?", (cutoff,))
@@ -123,12 +131,31 @@ async def read_session(session_id: str):
 
 @app.post("/sessions/{session_id}")
 async def update_session(session_id: str, data: dict = Body(...)):
-    state_value = data.get("state")
+    """Merge the provided values into the existing game state."""
+    conn.execute("BEGIN IMMEDIATE")
+    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.rollback()
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    current_state = json.loads(row[0]) if row[0] else {}
+    if not isinstance(current_state, dict):
+        current_state = {}
+
+    # Clients may POST either the raw state object or {"state": {...}} for
+    # backward compatibility. The data is always merged into the existing state.
+    patch = data.get("state", data)
+
+    if isinstance(patch, dict):
+        merge_dict(current_state, patch)
+        new_state = current_state
+    else:
+        new_state = patch
+
     cursor.execute(
         "UPDATE sessions SET state = ? WHERE hash = ?",
-        (json.dumps(state_value), session_id),
+        (json.dumps(new_state), session_id),
     )
-    if cursor.rowcount == 0:
-        return JSONResponse({"error": "Session not found"}, status_code=404)
     conn.commit()
     return JSONResponse({"status": "ok"})
