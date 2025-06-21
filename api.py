@@ -132,9 +132,11 @@ async def read_session(session_id: str):
 @app.post("/sessions/{session_id}")
 async def update_session(session_id: str, data: dict = Body(...)):
     """Merge the provided values into the existing game state."""
+    conn.execute("BEGIN IMMEDIATE")
     cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
     row = cursor.fetchone()
     if not row:
+        conn.rollback()
         return JSONResponse({"error": "Session not found"}, status_code=404)
 
     current_state = json.loads(row[0]) if row[0] else {}
