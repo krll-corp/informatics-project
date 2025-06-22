@@ -8,12 +8,14 @@ public class APIController : MonoBehaviour
 {
     public class HashData
     {
-        string hash;
+        public string hash;
     }
 
     public string server_url = "https://10.0.20.60:8000/";
     public GameObject helpPanel;
     public Text helpText;
+    
+    private HashData data;
 
     void Start()
     {
@@ -64,8 +66,7 @@ public class APIController : MonoBehaviour
         {
             Debug.Log("Received: " + uwr.downloadHandler.text);
 
-            HashData data = JsonConvert.DeserializeObject<HashData>(uwr.downloadHandler.text);
-            
+            data = JsonConvert.DeserializeObject<HashData>(uwr.downloadHandler.text);
         }
     }
 
