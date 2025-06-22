@@ -77,7 +77,7 @@ public class APIController : MonoBehaviour
     IEnumerator getHelpRequest()
     {
         // secret adjustments
-        string endpoint = "help";
+        string endpoint = $"{data.hash}/help";
 
         UnityWebRequest uwr = UnityWebRequest.Get(server_url + endpoint);
         yield return uwr.SendWebRequest();
