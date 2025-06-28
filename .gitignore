@@ -1,7 +1,4 @@
-Escaperoom/.
-vscode/
-Escaperoom/.idea/
-.idea/
+Escaperoom/.*
 
 # Compiled class file
 *.class
