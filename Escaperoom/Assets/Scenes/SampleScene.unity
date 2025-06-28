@@ -1199,14 +1199,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 6182332515575996101, guid: 980abf2bb03d4814c8a8cad9fd3fa5c2, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5947567890977887509, guid: 980abf2bb03d4814c8a8cad9fd3fa5c2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1497419319}
     - targetCorrespondingSourceObject: {fileID: 5947567890977887509, guid: 980abf2bb03d4814c8a8cad9fd3fa5c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1497419313}
@@ -1249,30 +1245,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d848db247889a8478832c330206653a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  onClickList: 0
+  onClickList: 1
   activatedGO: {fileID: 1928585209}
---- !u!64 &1497419319
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1497419311}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 7640321492218759047, guid: 06bb92387d023ad40bf5ed24702f20c0, type: 3}
 --- !u!1 &1599403221
 GameObject:
   m_ObjectHideFlags: 0
