@@ -833,6 +833,7 @@ MonoBehaviour:
   outlined:
   - {fileID: 482898172}
   - {fileID: 227252305}
+  - {fileID: 1497419311}
   selected: {fileID: 0}
 --- !u!1 &1001753832
 GameObject:
@@ -1222,7 +1223,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1497419311}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
   m_Name: 
@@ -1245,7 +1246,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d848db247889a8478832c330206653a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  onClickList: 1
+  onClickList: 0
   activatedGO: {fileID: 1928585209}
 --- !u!1 &1599403221
 GameObject:
