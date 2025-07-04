@@ -1,5 +1,5 @@
 Escaperoom/.*
-
+sessions.db
 # Compiled class file
 *.class
 
