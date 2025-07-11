@@ -1,133 +1,218 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using UnityEngine.UI;
-using Unity.VisualScripting;
-using System.Collections.Generic;
 using System;
 
 public class APIController : MonoBehaviour
 {
-    Dictionary<string, int> cur_state = new Dictionary<string, int>();
-    public class HashData
+    // Singleton instance
+    public static APIController Instance { get; private set; }
+
+    public string serverUrl = "http://10.0.20.60:8000";
+    public GameObject helpPanel;
+    public Text helpText;
+
+    // Private fields
+    private string sessionHash;
+
+    // --- Serializable classes for JSON ---
+    [System.Serializable]
+    private class SessionData
     {
         public string hash;
     }
 
-    public string server_url = "https://10.0.20.60:8000/";
-    public GameObject helpPanel;
-    public Text helpText;
-
-    private HashData data;
-
-    void Start()
+    [System.Serializable]
+    private class StateData
     {
-        checkS(server_url);
-        StartCoroutine(getHashRequest(server_url));
+        public object state;
     }
 
-    IEnumerator checkS(string server_url)
+    [System.Serializable]
+    private class HelpResponse
     {
-        UnityWebRequest uwr = UnityWebRequest.Get(server_url + "health");
-        yield return uwr.SendWebRequest();
-        if (uwr.responseCode != 200)
+        public string answer;
+    }
+
+    private void Awake()
+    {
+        if (Instance == null)
         {
-            Debug.Log("Error While Sending: " + uwr.error);
-            Debug.Log("Response Code: " + uwr.responseCode);
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Debug.Log("server running: " + uwr.downloadHandler.text);
+            Destroy(gameObject);
         }
     }
 
-    IEnumerator getHashRequest(string uri)
+    private void Start()
     {
-        UnityWebRequest uwr = UnityWebRequest.Get(uri + "getHash");
-        yield return uwr.SendWebRequest();
+        // Check server health and create a new session when the game starts
+        StartCoroutine(HealthCheckAndCreateSession());
+    }
 
-        if (uwr.responseCode != 200)
+    // --- Public Methods ---
+
+    /// <summary>
+    /// Sends the current game state to the server.
+    /// Can be called from other scripts: APIController.Instance.Send(yourState);
+    /// </summary>
+    /// <param name="gameState">A dictionary or any serializable object representing the game state.</param>
+    public void Send(object gameState)
+    {
+        if (string.IsNullOrEmpty(sessionHash))
         {
-            Debug.Log("Error While Sending: " + uwr.error);
-            Debug.Log("Response Code: " + uwr.responseCode);
+            Debug.LogError("Session hash is not available. Cannot send state.");
+            return;
         }
-        else
+        StartCoroutine(SendCoroutine(gameState));
+    }
+
+    /// <summary>
+    /// Gets the current game state from the server.
+    /// </summary>
+    /// <param name="callback">Callback to receive the state.</param>
+    public void Get(Action<object> callback)
+    {
+        if (string.IsNullOrEmpty(sessionHash))
         {
-            Debug.Log("Received: " + uwr.downloadHandler.text);
-
-            data = JsonConvert.DeserializeObject<HashData>(uwr.downloadHandler.text);
+            Debug.LogError("Session hash is not available. Cannot get state.");
+            callback?.Invoke(null);
+            return;
         }
+        StartCoroutine(GetCoroutine(callback));
     }
 
-    IEnumerator SendStateLoop(){
-    while (true)
-    {
-        yield return new WaitForSeconds(2);
-        if (data != null && !string.IsNullOrEmpty(data.hash))
-        {
-            cur_state["example_key"] = UnityEngine.Random.Range(0, 100); //for now
-            
-            StartCoroutine(SendStateRequest(server_url, cur_state));
-        }
-    }
-}
-
-IEnumerator SendStateRequest(string uri, Dictionary<string, int> state)
-{
-    string endpoint = $"{data.hash}";
-    string fullUrl = uri + endpoint;
-    string jsonData = JsonConvert.SerializeObject(state);
-
-    UnityWebRequest uwr = new UnityWebRequest(fullUrl, "POST");
-    byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(jsonData);
-    uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
-    uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-    uwr.SetRequestHeader("Content-Type", "application/json");
-
-    yield return uwr.SendWebRequest();
-
-    if (uwr.responseCode == 200)
-    {
-        Debug.Log("State sent successfully.");
-    }
-    else
-    {
-        Debug.Log("Error While Sending State: " + uwr.error);
-        Debug.Log("Response Code: " + uwr.responseCode);
-    }
-}
-
-
-
+    /// <summary>
+    /// Requests help from the server based on the current state.
+    /// </summary>
     public void GetHelp()
     {
-        StartCoroutine(getHelpRequest());
+        if (string.IsNullOrEmpty(sessionHash))
+        {
+            Debug.LogError("Session hash is not available. Cannot get help.");
+            return;
+        }
+        StartCoroutine(GetHelpCoroutine());
     }
 
-    IEnumerator getHelpRequest()
+    // --- Coroutines for Web Requests ---
+
+    private IEnumerator HealthCheckAndCreateSession()
     {
-        // secret adjustments
-        string endpoint = $"{data.hash}/help";
+        // First, check if the server is healthy
+        UnityWebRequest healthRequest = UnityWebRequest.Get($"{serverUrl}/health");
+        yield return healthRequest.SendWebRequest();
 
-        UnityWebRequest uwr = UnityWebRequest.Get(server_url + endpoint);
-        yield return uwr.SendWebRequest();
-
-        if (uwr.responseCode != 200)
+        if (healthRequest.result != UnityWebRequest.Result.Success)
         {
-            Debug.Log("Error While Sending: " + uwr.error);
-            Debug.Log("Response Code: " + uwr.responseCode);
+            Debug.LogError($"Health Check Error: {healthRequest.error}");
+            yield break; // Stop if the server is not running
+        }
+        
+        Debug.Log("Server is healthy: " + healthRequest.downloadHandler.text);
+
+        // If healthy, create a new session
+        UnityWebRequest sessionRequest = UnityWebRequest.PostWwwForm($"{serverUrl}/sessions", "");
+        
+        yield return sessionRequest.SendWebRequest();
+
+        if (sessionRequest.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"Create Session Error: {sessionRequest.error}");
+        }
+        else
+        {
+            string jsonResponse = sessionRequest.downloadHandler.text;
+            Debug.Log("Session created: " + jsonResponse);
+            SessionData data = JsonConvert.DeserializeObject<SessionData>(jsonResponse);
+            sessionHash = data.hash;
+            Debug.Log("Session Hash: " + sessionHash);
+        }
+    }
+
+    private IEnumerator SendCoroutine(object gameState)
+    {
+        string url = $"{serverUrl}/sessions/{sessionHash}";
+        
+        StateData stateData = new StateData { state = gameState };
+        string jsonData = JsonConvert.SerializeObject(stateData);
+        
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"Send State Error: {request.error} | Response Code: {request.responseCode}");
+        }
+        else
+        {
+            Debug.Log("State sent successfully. Response: " + request.downloadHandler.text);
+        }
+    }
+
+    private IEnumerator GetCoroutine(Action<object> callback)
+    {
+        string url = $"{serverUrl}/sessions/{sessionHash}";
+
+        UnityWebRequest request = UnityWebRequest.Get(url);
+        request.downloadHandler = new DownloadHandlerBuffer();
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"Get State Error: {request.error} | Response Code: {request.responseCode}");
+            callback?.Invoke(null);
+        }
+        else
+        {
+            string jsonResponse = request.downloadHandler.text;
+            Debug.Log("State received successfully. Response: " + jsonResponse);
+            StateData stateData = JsonConvert.DeserializeObject<StateData>(jsonResponse);
+            callback?.Invoke(stateData.state);
+        }
+    }
+
+    private IEnumerator GetHelpCoroutine() //ai stone
+    {
+        string url = $"{serverUrl}/sessions/{sessionHash}/help";
+        
+        UnityWebRequest request = UnityWebRequest.PostWwwForm(url, ""); 
+        request.downloadHandler = new DownloadHandlerBuffer();
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"Get Help Error: {request.error} | Response Code: {request.responseCode}");
             if (helpText != null)
             {
-                helpText.text = "Error: " + uwr.error;
+                helpText.text = $"Error: {request.error}";
             }
         }
         else
         {
-            Debug.Log("AIR help: " + uwr.downloadHandler.text);
+            string jsonResponse = request.downloadHandler.text;
+            Debug.Log("AI Help Received: " + jsonResponse);
+            
+            HelpResponse helpResponse = JsonConvert.DeserializeObject<HelpResponse>(jsonResponse);
+
             if (helpText != null)
             {
-                helpText.text = uwr.downloadHandler.text;
+                helpText.text = helpResponse.answer;
             }
         }
 

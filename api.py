@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-_s = base64.b64decode("SHVnZ2luZ0ZhY2VUQi9TbW9sTE0yLTEuN0ItSW5zdHJ1Y3Q=").decode() #SHVnZ2luZ0ZhY2VUQi9TbW9sTE0tMTM1TS1JbnN0cnVjdA==
+_s = base64.b64decode("SHVnZ2luZ0ZhY2VUQi9TbW9sTE0zLTNC").decode() #SHVnZ2luZ0ZhY2VUQi9TbW9sTE0tMTM1TS1JbnN0cnVjdA== SHVnZ2luZ0ZhY2VUQi9TbW9sTE0yLTEuN0ItSW5zdHJ1Y3Q=
 _tok_cls = getattr(tr, base64.b64decode(b"QXV0b1Rva2VuaXplcg==").decode())
 _mod_cls = getattr(tr, base64.b64decode(b"QXV0b01vZGVsRm9yQ2F1c2FsTE0=").decode())
 _tok = _tok_cls.from_pretrained(_s)
