@@ -7,13 +7,15 @@ public class Player2Move : MonoBehaviour
     public float dragSpeed = 0.1f;
     public float smoothTime = 0.1f;
 
+    public Canvas uiCanvas;
+    private Rect uiRect;
+
     private Vector3 targetPosition;
     private Vector3 velocity = Vector3.zero;
 
     private InputAction lookAction;
     private InputAction clickAction;
     private InputSystem_Actions playerInput;
-    private bool isDragging = false;
 
     private void OnEnable()
     {
@@ -34,6 +36,8 @@ public class Player2Move : MonoBehaviour
     private void Start()
     {
         targetPosition = transform.position;
+
+        uiRect = uiCanvas.GetComponent<RectTransform>().rect;
     }
 
     private void Update()
@@ -54,6 +58,9 @@ public class Player2Move : MonoBehaviour
 
         // Move along camera's local right and up
         targetPosition += transform.right * move.x + transform.up * move.y;
+
+        targetPosition.x = Mathf.Clamp(targetPosition.x, -(uiRect.width / 2), uiRect.width / 2);
+        targetPosition.y = Mathf.Clamp(targetPosition.y, -(uiRect.height / 2), uiRect.height / 2);
     }
 
     private void SmoothMove()
