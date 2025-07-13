@@ -165,7 +165,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        Debug.Log("Handle Move");
 
         // Calculate movement direction based on player's forward and right vectors
         Vector3 moveDirection = transform.forward * _moveInput.y + transform.right * _moveInput.x;

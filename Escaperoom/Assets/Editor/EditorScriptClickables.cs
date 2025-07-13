@@ -19,6 +19,14 @@ public class MyScriptEditor : Editor
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("activatedGO"));
                 break;
 
+            case Clickable.OnClickList.Pickup:
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("targetLocation"));
+                break;
+
+            case Clickable.OnClickList.Deliver:
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("targetNumber"));
+                break;
+
         }
 
         // Draw any common fields

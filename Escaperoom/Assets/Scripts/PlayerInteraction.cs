@@ -17,19 +17,20 @@ public class PlayerInteraction : MonoBehaviour
     {
         inputActions.UI.Enable();
 
-        inputActions.UI.Click.performed += OnClickPerformed;
+        inputActions.UI.Click.started += OnClickPerformed;
     }
 
     private void OnDisable()
     {
         inputActions.UI.Disable();
 
-        inputActions.UI.Click.performed -= OnClickPerformed;
+        inputActions.UI.Click.started -= OnClickPerformed;
 
     }
 
     void OnClickPerformed(InputAction.CallbackContext context)
     {
+
         GameObject sel = OutlineOnLook.Instance.selected;
 
         if ( !(sel is null) )

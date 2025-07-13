@@ -27,7 +27,12 @@ public class OutlineOnLook : MonoBehaviour
         possibleSelects.Clear();
         foreach (GameObject go in outlined) {
 
-            Vector3 direction = go.transform.position - transform.position;
+            if (! go.activeSelf)
+            {
+                continue;
+            }
+
+            Vector3 direction = go.GetComponent<Renderer>().bounds.center - transform.position;
             float distance = direction.magnitude;
             Outline outline = go.GetComponent<Outline>();
 
