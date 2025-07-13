@@ -32,22 +32,25 @@ public class FloatingCube : MonoBehaviour
         }
     }
 
-    public void ReactFrom(Vector3 origin, float speed = 10f)
+    public void ReactFrom(Vector3 origin, float speed = 10f, int mode = 1)
     {
         float distance = Vector3.Distance(new Vector3(transform.position.x, transform.position.y, 0), new Vector3(origin.x, origin.y, 0));
         float delay = distance / speed; // seconds per unit distance
 
-        Debug.Log(delay);
-
-        StartCoroutine(PlayFeedbackAfterDelay(delay));
+        StartCoroutine(PlayFeedbackAfterDelay(delay, mode));
     }
 
-    private IEnumerator PlayFeedbackAfterDelay(float delay)
+    private IEnumerator PlayFeedbackAfterDelay(float delay, int mode)
     {
         yield return new WaitForSeconds(delay);
         if (feedback != null)
         {
+
+            feedback.FeedbacksList[mode].Active = true;
+
             feedback.PlayFeedbacks();
+
+            feedback.FeedbacksList[mode].Active = false;
         }
     }
 }
