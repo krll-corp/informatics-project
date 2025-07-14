@@ -1,8 +1,7 @@
 fileFormatVersion: 2
 guid: 0f03458534bea45e4bba9ab3411321b2
-timeCreated: 1480001014
-licenseType: Store
 TrueTypeFontImporter:
+  externalObjects: {}
   serializedVersion: 4
   fontSize: 16
   forceTextureCase: -2
@@ -15,13 +14,8 @@ TrueTypeFontImporter:
   customCharacters: 
   fontRenderingMode: 0
   ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 183370
-  packageName: Feel
-  packageVersion: 5.6.1
-  assetPath: Assets/Feel/MMTools/Foundation/MMAchievements/Fonts/orange kid.ttf
-  uploadId: 768913
