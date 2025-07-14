@@ -1,0 +1,1 @@
+docker buildx build --platform linux/amd64 -t upstreambus2845/api:latest --push .
