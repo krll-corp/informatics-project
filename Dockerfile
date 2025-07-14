@@ -2,7 +2,8 @@ FROM python:3.13.5
 
 COPY api.py /server/
 
-RUN pip3 install -U fastapi uvicorn torch transformers
+RUN pip3 install -U fastapi uvicorn
+#torch transformers
 
 WORKDIR /server
 EXPOSE 8000
