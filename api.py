@@ -3,45 +3,45 @@ import uuid
 import json
 import sqlite3
 import datetime
-import base64
-import torch as t
-import transformers as tr
+#import base64
+# import torch as t
+# import transformers as tr
 
 from fastapi import FastAPI, Request, Body
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-_s = base64.b64decode("SHVnZ2luZ0ZhY2VUQi9TbW9sTE0zLTNC").decode() #SHVnZ2luZ0ZhY2VUQi9TbW9sTE0tMTM1TS1JbnN0cnVjdA== SHVnZ2luZ0ZhY2VUQi9TbW9sTE0yLTEuN0ItSW5zdHJ1Y3Q=
-_tok_cls = getattr(tr, base64.b64decode(b"QXV0b1Rva2VuaXplcg==").decode())
-_mod_cls = getattr(tr, base64.b64decode(b"QXV0b01vZGVsRm9yQ2F1c2FsTE0=").decode())
-_tok = _tok_cls.from_pretrained(_s)
-_mdl = _mod_cls.from_pretrained(_s)
+# _s = base64.b64decode("SHVnZ2luZ0ZhY2VUQi9TbW9sTE0yLTEuN0ItSW5zdHJ1Y3Q=").decode() #SHVnZ2luZ0ZhY2VUQi9TbW9sTE0tMTM1TS1JbnN0cnVjdA== SHVnZ2luZ0ZhY2VUQi9TbW9sTE0zLTNC
+# _tok_cls = getattr(tr, base64.b64decode(b"QXV0b1Rva2VuaXplcg==").decode())
+# _mod_cls = getattr(tr, base64.b64decode(b"QXV0b01vZGVsRm9yQ2F1c2FsTE0=").decode())
+# _tok = _tok_cls.from_pretrained(_s)
+# _mdl = _mod_cls.from_pretrained(_s)
 
-def _g(messages: list, max_new_tokens: int = 80):
-    # Apply chat template to format the conversation properly
-    input_text = _tok.apply_chat_template(messages, tokenize=False)
-    inputs = _tok.encode(input_text, return_tensors="pt")
+# def _g(messages: list, max_new_tokens: int = 80):
+#     # Apply chat template to format the conversation properly
+#     input_text = _tok.apply_chat_template(messages, tokenize=False)
+#     inputs = _tok.encode(input_text, return_tensors="pt")
     
-    with t.no_grad():
-        outputs = _mdl.generate(
-            inputs, 
-            max_new_tokens=max_new_tokens, 
-            temperature=0.2, 
-            top_p=0.9, 
-            do_sample=True,
-            pad_token_id=_tok.eos_token_id
-        )
+#     with t.no_grad():
+#         outputs = _mdl.generate(
+#             inputs, 
+#             max_new_tokens=max_new_tokens, 
+#             temperature=0.2, 
+#             top_p=0.9, 
+#             do_sample=True,
+#             pad_token_id=_tok.eos_token_id
+#         )
     
-    # Decode the full output and extract only the new generated tokens
-    full_response = _tok.decode(outputs[0], skip_special_tokens=True)
-    # Remove the input part to get only the generated response
-    if input_text in full_response:
-        generated_text = full_response[len(input_text):].strip()
-    else:
-        generated_text = full_response.strip()
+#     # Decode the full output and extract only the new generated tokens
+#     full_response = _tok.decode(outputs[0], skip_special_tokens=True)
+#     # Remove the input part to get only the generated response
+#     if input_text in full_response:
+#         generated_text = full_response[len(input_text):].strip()
+#     else:
+#         generated_text = full_response.strip()
     
-    return generated_text
+#     return generated_text
 
 DB_PATH = os.environ.get("DB_PATH", "sessions.db")
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -168,36 +168,36 @@ async def update_session(session_id: str, data: dict = Body(...)):
     return JSONResponse({"status": "ok"})
 
 
-@app.post("/sessions/{session_id}/help")
-async def help_session(session_id: str):
-    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
-    row = cursor.fetchone()
+# @app.post("/sessions/{session_id}/help")
+# async def help_session(session_id: str):
+#     cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
+#     row = cursor.fetchone()
     
-    try:
-        if row:
-            st = json.loads(row[0])
-        else:
-            # Use dummy state for testing when session doesn't exist
-            st = {"state": "this is a dummy state for testing purposes"}
-    except Exception as e:
-        st = {"state": "this is a dummy state for testing purposes"}
+#     try:
+#         if row:
+#             st = json.loads(row[0])
+#         else:
+#             # Use dummy state for testing when session doesn't exist
+#             st = {"state": "this is a dummy state for testing purposes"}
+#     except Exception as e:
+#         st = {"state": "this is a dummy state for testing purposes"}
     
-    system_message = "You are a helpful assistant inside a video game. Provide useful advice to help the player advance based on their current game state. You have access to the current game state which will be provided to you in the request. Use this information to give specific and actionable advice. You are an AI which has an ability to view the player's game state. If a dymmy game state is provided, respond 'THIS IS A TEST.'"
-    user_message = f"Current game state: {json.dumps(st)}\n\nI need help with what to do next in the game."
+#     system_message = "You are a helpful assistant inside a video game. Provide useful advice to help the player advance based on their current game state. You have access to the current game state which will be provided to you in the request. Use this information to give specific and actionable advice. You are an AI which has an ability to view the player's game state. If a dymmy game state is provided, respond 'THIS IS A TEST.'"
+#     user_message = f"Current game state: {json.dumps(st)}\n\nI need help with what to do next in the game."
     
-    messages = [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_message}
-    ]
+#     messages = [
+#         {"role": "system", "content": system_message},
+#         {"role": "user", "content": user_message}
+#     ]
     
-    try:
-        generated_text = _g(messages, max_new_tokens=1024)
+#     try:
+#         generated_text = _g(messages, max_new_tokens=1024)
         
-        # If no meaningful generation, provide fallback
-        if not generated_text or len(generated_text.strip()) < 10:
-            generated_text = "I understand you're in the game and need assistance. Based on your current state, I recommend exploring your surroundings carefully and checking your inventory for useful items."
+#         # If no meaningful generation, provide fallback
+#         if not generated_text or len(generated_text.strip()) < 10:
+#             generated_text = "I understand you're in the game and need assistance. Based on your current state, I recommend exploring your surroundings carefully and checking your inventory for useful items."
             
-    except Exception as e:
-        generated_text = f"Sorry, I'm having trouble generating a response right now. Error: {str(e)}"
+#     except Exception as e:
+#         generated_text = f"Sorry, I'm having trouble generating a response right now. Error: {str(e)}"
     
-    return JSONResponse({"answer": generated_text})
+#     return JSONResponse({"answer": generated_text})

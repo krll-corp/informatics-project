@@ -13,8 +13,8 @@ public class APIController : MonoBehaviour
     public static APIController Instance { get; private set; }
 
     public string serverUrl = "http://10.0.20.60:8000";
-    public GameObject helpPanel;
-    public Text helpText;
+    //public GameObject helpPanel;
+    //public Text helpText;
 
     // Private fields
     private string sessionHash;
@@ -92,15 +92,15 @@ public class APIController : MonoBehaviour
     /// <summary>
     /// Requests help from the server based on the current state.
     /// </summary>
-    public void GetHelp()
-    {
-        if (string.IsNullOrEmpty(sessionHash))
-        {
-            Debug.LogError("Session hash is not available. Cannot get help.");
-            return;
-        }
-        StartCoroutine(GetHelpCoroutine());
-    }
+    //public void GetHelp()
+    //{
+    //    if (string.IsNullOrEmpty(sessionHash))
+    //    {
+    //        Debug.LogError("Session hash is not available. Cannot get help.");
+    //        return;
+    //    }
+    //    StartCoroutine(GetHelpCoroutine());
+    //}
 
     // --- Coroutines for Web Requests ---
 
@@ -186,39 +186,39 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private IEnumerator GetHelpCoroutine() //ai stone
-    {
-        string url = $"{serverUrl}/sessions/{sessionHash}/help";
+    //private IEnumerator GetHelpCoroutine() //ai stone
+    //{
+    //    string url = $"{serverUrl}/sessions/{sessionHash}/help";
         
-        UnityWebRequest request = UnityWebRequest.PostWwwForm(url, ""); 
-        request.downloadHandler = new DownloadHandlerBuffer();
+    //    UnityWebRequest request = UnityWebRequest.PostWwwForm(url, ""); 
+    //    request.downloadHandler = new DownloadHandlerBuffer();
 
-        yield return request.SendWebRequest();
+    //    yield return request.SendWebRequest();
 
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"Get Help Error: {request.error} | Response Code: {request.responseCode}");
-            if (helpText != null)
-            {
-                helpText.text = $"Error: {request.error}";
-            }
-        }
-        else
-        {
-            string jsonResponse = request.downloadHandler.text;
-            Debug.Log("AI Help Received: " + jsonResponse);
+    //    if (request.result != UnityWebRequest.Result.Success)
+    //    {
+    //        Debug.LogError($"Get Help Error: {request.error} | Response Code: {request.responseCode}");
+    //        if (helpText != null)
+    //        {
+    //            helpText.text = $"Error: {request.error}";
+    //        }
+    //    }
+    //    else
+    //    {
+    //        string jsonResponse = request.downloadHandler.text;
+    //        Debug.Log("AI Help Received: " + jsonResponse);
             
-            HelpResponse helpResponse = JsonConvert.DeserializeObject<HelpResponse>(jsonResponse);
+    //        HelpResponse helpResponse = JsonConvert.DeserializeObject<HelpResponse>(jsonResponse);
 
-            if (helpText != null)
-            {
-                helpText.text = helpResponse.answer;
-            }
-        }
+    //        if (helpText != null)
+    //        {
+    //            helpText.text = helpResponse.answer;
+    //        }
+    //    }
 
-        if (helpPanel != null)
-        {
-            helpPanel.SetActive(true);
-        }
-    }
+    //    if (helpPanel != null)
+    //    {
+    //        helpPanel.SetActive(true);
+    //    }
+    //}
 }
