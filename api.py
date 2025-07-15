@@ -1,5 +1,5 @@
 import os
-import uuid
+import random
 import json
 import sqlite3
 import datetime
@@ -136,7 +136,11 @@ async def health():
 
 @app.post("/sessions")
 async def create_session():
-    session_id = uuid.uuid4().hex
+    while True:
+        session_id = f"{random.randint(0, 999999):06d}"
+        cursor.execute("SELECT id FROM sessions WHERE hash = ?", (session_id,))
+        if cursor.fetchone() is None:
+            break
     created_at = datetime.datetime.now()
     cursor.execute(
         "INSERT INTO sessions (hash, state, created_at) VALUES (?, ?, ?)",
