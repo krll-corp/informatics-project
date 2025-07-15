@@ -2,7 +2,7 @@ fileFormatVersion: 2
 guid: f21b8aa019c25474fb2e94a55d49fe6f
 AudioImporter:
   externalObjects: {}
-  serializedVersion: 8
+  serializedVersion: 7
   defaultSettings:
     serializedVersion: 2
     loadType: 0
@@ -21,3 +21,10 @@ AudioImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 183370
+  packageName: Feel
+  packageVersion: 5.6.1
+  assetPath: Assets/Feel/FeelDemos/Springs/Audio/FeelSpringsTreeTalk3.wav
+  uploadId: 768913

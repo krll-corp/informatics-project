@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -17,8 +18,11 @@ public class Player2Move : MonoBehaviour
     private InputAction clickAction;
     private InputSystem_Actions playerInput;
 
+    public static Player2Move instance;
+
     private void OnEnable()
     {
+
         playerInput = new InputSystem_Actions();
         lookAction = playerInput.Player.Look;
         clickAction = playerInput.UI.Click;
@@ -35,9 +39,12 @@ public class Player2Move : MonoBehaviour
 
     private void Start()
     {
+        instance = this;
         targetPosition = transform.position;
 
         uiRect = uiCanvas.GetComponent<RectTransform>().rect;
+
+        this.enabled = false;
     }
 
     private void Update()

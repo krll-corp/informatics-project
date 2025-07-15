@@ -13,12 +13,6 @@ public class Clickable : MonoBehaviour
     public OnClickList onClickList = OnClickList.ActivateGO;
 
     public GameObject activatedGO;
-    private APIController apiController;
-
-    private void Awake()
-    {
-        apiController = FindObjectOfType<APIController>();
-    }
 
     public int targetLocation;
 
