@@ -1,0 +1,22 @@
+.header {
+    font-size: 40px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-center;
+    color: rgb(255, 255, 255);
+    margin-bottom: 60px;
+}
+
+.button {
+    font-size: 20px;
+    width: 220px;
+    height: 60px;
+    align-self: center;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 45px;
+    margin-left: 0;
+}

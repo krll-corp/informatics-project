@@ -9,15 +9,24 @@ using System;
 
 public class APIController : MonoBehaviour
 {
+    public static GameState gameState;
+
+    public static int playerID = -1;
+
+    private bool isPolling = false;
+    private bool isReading = false;
+
+
     // Singleton instance
     public static APIController Instance { get; private set; }
 
     public string serverUrl = "http://10.0.20.60:8000";
     //public GameObject helpPanel;
     //public Text helpText;
+    
+    public string sessionHash;
 
     // Private fields
-    private string sessionHash;
 
     // --- Serializable classes for JSON ---
     [System.Serializable]
@@ -27,9 +36,9 @@ public class APIController : MonoBehaviour
     }
 
     [System.Serializable]
-    private class StateData
+    private class StateData<T>
     {
-        public object state;
+        public T state;
     }
 
     [System.Serializable]
@@ -51,10 +60,28 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private void Start()
+    private void OnDisable()
     {
-        // Check server health and create a new session when the game starts
-        StartCoroutine(HealthCheckAndCreateSession());
+        if (playerID != -1)
+        {
+            GameState s = gameState;
+            switch (playerID) 
+            {
+                case 0:                    
+                    s.player1 = false;
+
+                    Send(s);
+
+                    break;
+
+                case 1:
+                    s.player2 = false;
+
+                    Send(s);
+
+                    break;
+            }
+        }
     }
 
     // --- Public Methods ---
@@ -64,7 +91,7 @@ public class APIController : MonoBehaviour
     /// Can be called from other scripts: APIController.Instance.Send(yourState);
     /// </summary>
     /// <param name="gameState">A dictionary or any serializable object representing the game state.</param>
-    public void Send(object gameState)
+    public void Send(GameState gameState)
     {
         if (string.IsNullOrEmpty(sessionHash))
         {
@@ -78,7 +105,7 @@ public class APIController : MonoBehaviour
     /// Gets the current game state from the server.
     /// </summary>
     /// <param name="callback">Callback to receive the state.</param>
-    public void Get(Action<object> callback)
+    public void Get(Action<GameState> callback)
     {
         if (string.IsNullOrEmpty(sessionHash))
         {
@@ -104,7 +131,9 @@ public class APIController : MonoBehaviour
 
     // --- Coroutines for Web Requests ---
 
-    private IEnumerator HealthCheckAndCreateSession()
+
+
+    public IEnumerator HealthCheckAndCreateSession()
     {
         // First, check if the server is healthy
         UnityWebRequest healthRequest = UnityWebRequest.Get($"{serverUrl}/health");
@@ -120,7 +149,7 @@ public class APIController : MonoBehaviour
 
         // If healthy, create a new session
         UnityWebRequest sessionRequest = UnityWebRequest.PostWwwForm($"{serverUrl}/sessions", "");
-        
+
         yield return sessionRequest.SendWebRequest();
 
         if (sessionRequest.result != UnityWebRequest.Result.Success)
@@ -137,11 +166,16 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private IEnumerator SendCoroutine(object gameState)
+    private IEnumerator SendCoroutine(GameState gameState)
     {
+        while (isReading) 
+        {
+            yield return null;
+        }
+
         string url = $"{serverUrl}/sessions/{sessionHash}";
         
-        StateData stateData = new StateData { state = gameState };
+        StateData<GameState> stateData = new StateData<GameState> { state = gameState };
         string jsonData = JsonConvert.SerializeObject(stateData);
         
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
@@ -163,7 +197,7 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private IEnumerator GetCoroutine(Action<object> callback)
+    private IEnumerator GetCoroutine(Action<GameState> callback)
     {
         string url = $"{serverUrl}/sessions/{sessionHash}";
 
@@ -181,15 +215,54 @@ public class APIController : MonoBehaviour
         {
             string jsonResponse = request.downloadHandler.text;
             Debug.Log("State received successfully. Response: " + jsonResponse);
-            StateData stateData = JsonConvert.DeserializeObject<StateData>(jsonResponse);
-            callback?.Invoke(stateData.state);
+
+            try
+            {
+                StateData<GameState> stateData = JsonConvert.DeserializeObject<StateData<GameState>>(jsonResponse);
+                callback?.Invoke(stateData.state);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to deserialize GameState: {ex.Message}");
+                callback?.Invoke(null);
+            }
         }
     }
+
+
+
+    private IEnumerator PollGameState()
+    {
+        if (isPolling) 
+        { 
+            yield break;
+        }
+
+        isPolling = true;
+
+        while (true)
+        {
+            isReading = false;
+
+            Get(state =>
+            {
+                gameState = state;
+                isReading = true;
+            });
+
+            while (!isReading)
+                yield return null;
+
+            yield return new WaitForSeconds(2f);
+        }
+    }
+
+
 
     //private IEnumerator GetHelpCoroutine() //ai stone
     //{
     //    string url = $"{serverUrl}/sessions/{sessionHash}/help";
-        
+
     //    UnityWebRequest request = UnityWebRequest.PostWwwForm(url, ""); 
     //    request.downloadHandler = new DownloadHandlerBuffer();
 
@@ -207,7 +280,7 @@ public class APIController : MonoBehaviour
     //    {
     //        string jsonResponse = request.downloadHandler.text;
     //        Debug.Log("AI Help Received: " + jsonResponse);
-            
+
     //        HelpResponse helpResponse = JsonConvert.DeserializeObject<HelpResponse>(jsonResponse);
 
     //        if (helpText != null)
