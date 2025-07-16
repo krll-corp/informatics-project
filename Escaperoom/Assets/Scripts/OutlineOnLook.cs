@@ -13,7 +13,7 @@ public class OutlineOnLook : MonoBehaviour
 
     private Dictionary<Outline, float> possibleSelects = new Dictionary<Outline, float>();
 
-    public GameObject selected;
+    public GameObject selected = null;
 
     public static OutlineOnLook Instance;
 
@@ -32,7 +32,7 @@ public class OutlineOnLook : MonoBehaviour
                 continue;
             }
 
-            Vector3 direction = go.GetComponent<Renderer>().bounds.center - transform.position;
+            Vector3 direction = go.transform.position - transform.position;
             float distance = direction.magnitude;
             Outline outline = go.GetComponent<Outline>();
 

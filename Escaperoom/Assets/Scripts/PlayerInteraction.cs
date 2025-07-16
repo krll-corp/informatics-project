@@ -33,7 +33,7 @@ public class PlayerInteraction : MonoBehaviour
 
         GameObject sel = OutlineOnLook.Instance.selected;
 
-        if ( !(sel is null) )
+        if ( sel is not null )
         {
             sel.GetComponent<Clickable>().OnClick();
         }

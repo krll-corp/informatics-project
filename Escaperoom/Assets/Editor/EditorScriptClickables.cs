@@ -21,6 +21,8 @@ public class MyScriptEditor : Editor
 
             case Clickable.OnClickList.Pickup:
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("targetLocation"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("pickedScale"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("pickedRot"));
                 break;
 
             case Clickable.OnClickList.Deliver:
