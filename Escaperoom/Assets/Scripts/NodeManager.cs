@@ -1,4 +1,5 @@
 using MoreMountains.Feedbacks;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -91,8 +92,17 @@ public class NodeManager : MonoBehaviour
         if (APIController.gameStateP1.pickup1 && APIController.gameStateP1.pickup2 && APIController.gameStateP1.pickup3 && APIController.gameStateP1.pickup4)
         {
             // Load Next Level
-            SceneManager.LoadScene(5);
+            Player2_LoadAnim.instance.fadeOut();
+
+            StartCoroutine(switchHelper());
         }
+
+}
+    private IEnumerator switchHelper()
+    {
+        yield return new WaitForSeconds(3f);
+
+        SceneManager.LoadScene(5);
     }
 
 
@@ -105,7 +115,6 @@ public class NodeManager : MonoBehaviour
 
     public void playerMapSync()
     {
-        Debug.Log("checking..");
 
         if (APIController.gameStateP1.pickup1 && !o1)
         {
@@ -115,6 +124,8 @@ public class NodeManager : MonoBehaviour
 
             // disable button 3
             hammerButtonScript.interactable = false;
+
+            hasLevelEnded();
         }
 
         if (APIController.gameStateP1.pickup2 && !o2)
@@ -125,6 +136,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 1
             blumeButtonScript.interactable = false;
+            hasLevelEnded();
 
         }
 
@@ -136,6 +148,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 4
             saegeButtonScript.interactable = false;
+            hasLevelEnded();
         }
 
         if (APIController.gameStateP1.pickup4 && !o4)
@@ -146,6 +159,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 2
             gewehrButtonScript.interactable = false;
+            hasLevelEnded();
         }
 
         if (APIController.gameStateP1.wrongTarget > badCount)
