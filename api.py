@@ -189,6 +189,21 @@ async def update_and_read(session_id: str, user: int, data: dict = Body(None)):
     # It handles the case where the session exists but the row fetch fails, or if no data was sent to update.
     return JSONResponse({"error": "Session not found"}, status_code=404)
 
+@app.get("/sessions/{session_id}/{player}")
+async def get_states(session_id: str, player: int):
+    if player not in [0, 1]:
+        return JSONResponse({"error": "Invalid player"}, status_code=400)
+
+    state_to_get_col = f"state_{player}"
+    cursor.execute(f"SELECT {state_to_get_col} FROM sessions WHERE hash = ?", (session_id,))
+    row = cursor.fetchone()
+
+    if row:
+        state = row[0]
+        return JSONResponse({"state": json.loads(state) if state else None})
+
+    return JSONResponse({"error": "Session not found"}, status_code=404)
+
 # @app.post("/sessions/{session_id}/help")
 # async def help_session(session_id: str):
 #     cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
