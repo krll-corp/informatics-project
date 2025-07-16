@@ -59,12 +59,16 @@ public class MainMenuEvents : MonoBehaviour
 
     private void OnPlayerHostClick(ClickEvent e)
     {
+        APIController.playerID = 0;
+
         StartCoroutine(createSession());
     }
 
     private void OnPlayerJoinClick(ClickEvent e)
     {
         APIController.Instance.sessionHash = _joinCode.text;
+
+        APIController.playerID = 1;
 
         _hostButton.UnregisterCallback<ClickEvent>(OnPlayerHostClick);
         _joinButton.UnregisterCallback<ClickEvent>(OnPlayerJoinClick);
@@ -77,34 +81,47 @@ public class MainMenuEvents : MonoBehaviour
 
         // verify code and establish first game state
 
-        APIController.Instance.Get(getCallback);
+        // Lobby full check missing here
+
+
+        APIController.Instance.Send<GameStateP2, GameStateP1>(APIController.gameStateP2, getP1Callback);
     }
 
 
-    private void getCallback(GameState state)
+    private void getP1Callback(GameStateP1 stateP1)
     {
-        if (state == null)
+        if (stateP1 == null)
         {
+            //Lobby doesn't exist
+
             Debug.LogWarning("Failed to retrieve state.");
 
             StartCoroutine(connectionFailed());
 
             return;
         }
-        if(state.player1 && state.player2)
+
+        // Debug.LogWarning("Lobby full.");
+        // StartCoroutine(connectionFailed());
+        // return;
+
+        if (stateP1.connected)
         {
-            Debug.LogWarning("Lobby full.");
+            // Player 1 is connected
+
+            StartCoroutine(APIController.Instance.PollGameStateP1());
+
+            WaitText.text = "Connected!";
+        }
+
+        else 
+        {
+            Debug.LogWarning("Player 1 disconected.");
 
             StartCoroutine(connectionFailed());
 
             return;
         }
-
-        WaitText.text = "Connected!";
-
-        APIController.playerID = 1;
-
-        // start level if player 1(id=0) is connected
     }
 
 
@@ -114,6 +131,7 @@ public class MainMenuEvents : MonoBehaviour
 
         yield return new WaitForSeconds(3);
 
+        APIController.playerID = -1;
         HostCodeText.text = "";
         _document.enabled = true;
         waitScreen.SetActive(false);
@@ -136,22 +154,23 @@ public class MainMenuEvents : MonoBehaviour
 
         yield return APIController.Instance.HealthCheckAndCreateSession();
 
-        Debug.Log(APIController.Instance.sessionHash);
-
         if ( string.IsNullOrEmpty(APIController.Instance.sessionHash) )
         {
             yield return connectionFailed();
             yield break ;
         }
 
-        GameState state = new GameState();
-        state.player1 = true;
+       
+        // Initiate polling
 
-        APIController.Instance.Send(state);
+        StartCoroutine(APIController.Instance.PollGameStateP2());
+
+
+        // mark as connected
+        APIController.gameStateP1.connected = true;
+
 
         WaitText.text = "Waiting for second Player..";
-
-        APIController.playerID = 0;
 
         // paste HostCode when connected
 

@@ -9,7 +9,8 @@ using System;
 
 public class APIController : MonoBehaviour
 {
-    public static GameState gameState;
+    public static GameStateP1 gameStateP1 = new GameStateP1();
+    public static GameStateP2 gameStateP2 = new GameStateP2();
 
     public static int playerID = -1;
 
@@ -60,25 +61,22 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private void OnDisable()
+    private void OnApplicationQuit()
     {
         if (playerID != -1)
         {
-            GameState s = gameState;
             switch (playerID) 
             {
                 case 0:                    
-                    s.player1 = false;
+                    gameStateP1.connected = false;
 
-                    Send(s);
-
+                    Send<GameStateP1, GameStateP2>(gameStateP1, null);
                     break;
 
                 case 1:
-                    s.player2 = false;
+                    gameStateP2.connected = false;
 
-                    Send(s);
-
+                    Send<GameStateP2, GameStateP1>(gameStateP2, null);
                     break;
             }
         }
@@ -91,21 +89,21 @@ public class APIController : MonoBehaviour
     /// Can be called from other scripts: APIController.Instance.Send(yourState);
     /// </summary>
     /// <param name="gameState">A dictionary or any serializable object representing the game state.</param>
-    public void Send(GameState gameState)
+    public void Send<In, Out>(In gameState, Action<Out> callback) where In : class where Out : class
     {
         if (string.IsNullOrEmpty(sessionHash))
         {
             Debug.LogError("Session hash is not available. Cannot send state.");
             return;
         }
-        StartCoroutine(SendCoroutine(gameState));
+        StartCoroutine(SendCoroutine(gameState, callback));
     }
 
     /// <summary>
     /// Gets the current game state from the server.
     /// </summary>
     /// <param name="callback">Callback to receive the state.</param>
-    public void Get(Action<GameState> callback)
+    public void Get<T>(Action<T> callback, int pID = -1) where T : class
     {
         if (string.IsNullOrEmpty(sessionHash))
         {
@@ -113,7 +111,7 @@ public class APIController : MonoBehaviour
             callback?.Invoke(null);
             return;
         }
-        StartCoroutine(GetCoroutine(callback));
+        StartCoroutine(GetCoroutine(callback, pID));
     }
 
     /// <summary>
@@ -166,18 +164,13 @@ public class APIController : MonoBehaviour
         }
     }
 
-    private IEnumerator SendCoroutine(GameState gameState)
+    private IEnumerator SendCoroutine<Out, In>(Out gameState, Action<In> callback) where Out : class where In : class
     {
-        while (isReading) 
-        {
-            yield return null;
-        }
 
-        string url = $"{serverUrl}/sessions/{sessionHash}";
+        string url = $"{serverUrl}/sessions/{sessionHash}/{playerID}";
         
-        StateData<GameState> stateData = new StateData<GameState> { state = gameState };
-        string jsonData = JsonConvert.SerializeObject(stateData);
-        
+        StateData<Out> stateDataOut = new StateData<Out> { state = gameState };
+        string jsonData = JsonConvert.SerializeObject(stateDataOut);
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
 
         UnityWebRequest request = new UnityWebRequest(url, "POST");
@@ -194,12 +187,33 @@ public class APIController : MonoBehaviour
         else
         {
             Debug.Log("State sent successfully. Response: " + request.downloadHandler.text);
+
+            // got other gamestate
+
+            string jsonResponse = request.downloadHandler.text;
+            Debug.Log("State received successfully. Response: " + jsonResponse);
+
+            try
+            {
+                StateData<In> stateDataIn = JsonConvert.DeserializeObject<StateData<In>>(jsonResponse);
+                callback?.Invoke(stateDataIn.state);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to deserialize GameState: {ex.Message}");
+                callback?.Invoke(null);
+            }
         }
     }
 
-    private IEnumerator GetCoroutine(Action<GameState> callback)
+    private IEnumerator GetCoroutine<T>(Action<T> callback, int pID = -1) where T : class
     {
-        string url = $"{serverUrl}/sessions/{sessionHash}";
+        if (pID == -1) 
+        {
+            pID = 1 - playerID;
+        }
+
+        string url = $"{serverUrl}/sessions/{sessionHash}/{pID}";
 
         UnityWebRequest request = UnityWebRequest.Get(url);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -218,7 +232,7 @@ public class APIController : MonoBehaviour
 
             try
             {
-                StateData<GameState> stateData = JsonConvert.DeserializeObject<StateData<GameState>>(jsonResponse);
+                StateData<T> stateData = JsonConvert.DeserializeObject<StateData<T>>(jsonResponse);
                 callback?.Invoke(stateData.state);
             }
             catch (Exception ex)
@@ -230,8 +244,8 @@ public class APIController : MonoBehaviour
     }
 
 
-
-    private IEnumerator PollGameState()
+    // used by player 2 to get the state of player 1
+    public IEnumerator PollGameStateP1()
     {
         if (isPolling) 
         { 
@@ -242,15 +256,42 @@ public class APIController : MonoBehaviour
 
         while (true)
         {
-            isReading = false;
+            isReading = true;
 
-            Get(state =>
+            Send<GameStateP2, GameStateP1>(gameStateP2, state =>
             {
-                gameState = state;
-                isReading = true;
+                gameStateP1 = state;
+                isReading = false;
             });
 
-            while (!isReading)
+            while (isReading)
+                yield return null;
+
+            yield return new WaitForSeconds(2f);
+        }
+    }
+
+    public IEnumerator PollGameStateP2()
+    {
+        if (isPolling)
+        {
+            yield break;
+        }
+
+        isPolling = true;
+
+        while (true)
+        {
+            isReading = true;
+
+            Send<GameStateP1, GameStateP2>(gameStateP1, state =>
+            {
+                gameStateP2 = state;
+                isReading = false;
+            });
+
+
+            while (isReading)
                 yield return null;
 
             yield return new WaitForSeconds(2f);
