@@ -12,6 +12,8 @@ public class APIController : MonoBehaviour
     public static GameStateP1 gameStateP1 = new GameStateP1();
     public static GameStateP2 gameStateP2 = new GameStateP2();
 
+    public static event Action gotNewState;
+
     public static int playerID = -1;
 
     private bool isPolling = false;
@@ -293,6 +295,8 @@ public class APIController : MonoBehaviour
 
             while (isReading)
                 yield return null;
+
+            gotNewState?.Invoke();
 
             yield return new WaitForSeconds(2f);
         }

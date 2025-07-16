@@ -3,6 +3,8 @@ using TMPro;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.SceneManagement;
+using MoreMountains.Feedbacks;
 
 public class MainMenuEvents : MonoBehaviour
 {
@@ -22,6 +24,13 @@ public class MainMenuEvents : MonoBehaviour
     private TextMeshProUGUI WaitText;
 
 
+    public GameObject endQuad;
+    private MMF_Player endTrans;
+
+    public int sceneOneIndexP1 = 1;
+    public int sceneOneIndexP2 = 4;
+
+
     private class gameState
     {
         Dictionary<int, bool> players = new Dictionary<int, bool>();
@@ -34,6 +43,8 @@ public class MainMenuEvents : MonoBehaviour
 
         HostCodeText = HostCodeTextField.GetComponent<TextMeshProUGUI>();
         WaitText = WaitTextField.GetComponent<TextMeshProUGUI>();
+
+        endTrans = endQuad.GetComponent<MMF_Player>();
     }
 
     private void getUi()
@@ -55,6 +66,11 @@ public class MainMenuEvents : MonoBehaviour
     {
         _hostButton.UnregisterCallback<ClickEvent>(OnPlayerHostClick);
         _joinButton.UnregisterCallback<ClickEvent>(OnPlayerJoinClick);
+
+
+        // disable api
+
+        APIController.gotNewState -= checkForP2;
     }
 
     private void OnPlayerHostClick(ClickEvent e)
@@ -112,6 +128,10 @@ public class MainMenuEvents : MonoBehaviour
             StartCoroutine(APIController.Instance.PollGameStateP1());
 
             WaitText.text = "Connected!";
+
+            // start game
+
+            StartCoroutine(transition(sceneOneIndexP2));
         }
 
         else 
@@ -124,6 +144,13 @@ public class MainMenuEvents : MonoBehaviour
         }
     }
 
+
+    private IEnumerator transition(int sceneIndex)
+    {
+        endTrans.PlayFeedbacks();
+        yield return new WaitForSeconds(1f);
+        SceneManager.LoadScene(sceneIndex);
+    }
 
     private IEnumerator connectionFailed()
     {
@@ -178,7 +205,16 @@ public class MainMenuEvents : MonoBehaviour
 
         // detect when second player connects
 
-        // start level
+        APIController.gotNewState += checkForP2;
+    }
+
+    void checkForP2()
+    {
+
+        if (APIController.gameStateP2.connected)
+        {
+            StartCoroutine(transition(sceneOneIndexP1));
+        }
     }
 
 }
