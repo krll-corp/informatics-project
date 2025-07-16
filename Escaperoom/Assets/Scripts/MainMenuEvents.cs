@@ -127,6 +127,8 @@ public class MainMenuEvents : MonoBehaviour
 
             StartCoroutine(APIController.Instance.PollGameStateP1());
 
+            APIController.gameStateP2.connected = true;
+
             WaitText.text = "Connected!";
 
             // start game
@@ -211,9 +213,12 @@ public class MainMenuEvents : MonoBehaviour
     void checkForP2()
     {
 
-        if (APIController.gameStateP2.connected)
+        if (APIController.gameStateP2 != null)
         {
-            StartCoroutine(transition(sceneOneIndexP1));
+            if (APIController.gameStateP2.connected)
+            {
+                StartCoroutine(transition(sceneOneIndexP1));
+            }
         }
     }
 
