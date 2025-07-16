@@ -59,6 +59,14 @@ cursor.execute(
 )
 conn.commit()
 
+def merge_dict(base: dict, updates: dict) -> None:
+    """Recursively merge updates into base."""
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge_dict(base[key], value)
+        else:
+            base[key] = value
+
 def cleanup_sessions():
     cutoff = datetime.datetime.now() - datetime.timedelta(weeks=1) #datetime.timezone.utc
     cursor.execute("DELETE FROM sessions WHERE created_at <= ?", (cutoff,))
@@ -166,7 +174,7 @@ async def update_and_read(session_id: str, user: int, data: dict = Body(None)):
         if cursor.rowcount == 0:
             return JSONResponse({"error": "Session not found"}, status_code=404)
         conn.commit()
-
+    
 
     other_user = 1 - user
     state_to_get_col = f"state_{other_user}"

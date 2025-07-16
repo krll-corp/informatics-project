@@ -1,7 +1,0 @@
-- 2 spieler
-- koop
-- multiplayer
-- anwendung kann host und client
-- verbindung über gehashte ip (als input)
-- easte eggs
-- informatik theme
