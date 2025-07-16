@@ -1,5 +1,5 @@
 import os
-import uuid
+import random
 import json
 import sqlite3
 import datetime
@@ -51,7 +51,8 @@ cursor.execute(
     CREATE TABLE IF NOT EXISTS sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         hash TEXT UNIQUE,
-        state TEXT,
+        state_0 TEXT,
+        state_1 TEXT,
         created_at TIMESTAMP
     )
     """
@@ -144,56 +145,49 @@ async def health():
 
 @app.post("/sessions")
 async def create_session():
-    session_id = uuid.uuid4().hex
+    while True:
+        session_id = f"{random.randint(0, 999999):06d}"
+        cursor.execute("SELECT id FROM sessions WHERE hash = ?", (session_id,))
+        if cursor.fetchone() is None:
+            break
     created_at = datetime.datetime.now()
     cursor.execute(
-        "INSERT INTO sessions (hash, state, created_at) VALUES (?, ?, ?)",
-        (session_id, json.dumps(None), created_at),
+        "INSERT INTO sessions (hash, state_0, state_1, created_at) VALUES (?, ?, ?, ?)",
+        (session_id, json.dumps(None), json.dumps(None), created_at),
     )
     conn.commit()
     return JSONResponse({"hash": session_id})
 
 
-@app.get("/sessions/{session_id}")
-async def read_session(session_id: str):
-    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
+@app.post("/sessions/{session_id}/{user}")
+async def update_and_read(session_id: str, user: int, data: dict = Body(None)):
+    if user not in [0, 1]:
+        return JSONResponse({"error": "Invalid user"}, status_code=400)
+
+    if data and "state" in data:
+        state_to_update_col = f"state_{user}"
+        state_value = data.get("state")
+        cursor.execute(
+            f"UPDATE sessions SET {state_to_update_col} = ? WHERE hash = ?",
+            (json.dumps(state_value), session_id),
+        )
+        if cursor.rowcount == 0:
+            return JSONResponse({"error": "Session not found"}, status_code=404)
+        conn.commit()
+    
+
+    other_user = 1 - user
+    state_to_get_col = f"state_{other_user}"
+    cursor.execute(f"SELECT {state_to_get_col} FROM sessions WHERE hash = ?", (session_id,))
     row = cursor.fetchone()
+
     if row:
-        return JSONResponse({"state": json.loads(row[0])})
+        state = row[0]
+        return JSONResponse({"state": json.loads(state) if state else None})
+    
+    # This part should ideally not be reached if the update succeeded.
+    # It handles the case where the session exists but the row fetch fails, or if no data was sent to update.
     return JSONResponse({"error": "Session not found"}, status_code=404)
-
-
-@app.post("/sessions/{session_id}")
-async def update_session(session_id: str, data: dict = Body(...)):
-    """Merge the provided values into the existing game state."""
-    conn.execute("BEGIN IMMEDIATE")
-    cursor.execute("SELECT state FROM sessions WHERE hash = ?", (session_id,))
-    row = cursor.fetchone()
-    if not row:
-        conn.rollback()
-        return JSONResponse({"error": "Session not found"}, status_code=404)
-
-    current_state = json.loads(row[0]) if row[0] else {}
-    if not isinstance(current_state, dict):
-        current_state = {}
-
-    # Clients may POST either the raw state object or {"state": {...}} for
-    # backward compatibility. The data is always merged into the existing state.
-    patch = data.get("state", data)
-
-    if isinstance(patch, dict):
-        merge_dict(current_state, patch)
-        new_state = current_state
-    else:
-        new_state = patch
-
-    cursor.execute(
-        "UPDATE sessions SET state = ? WHERE hash = ?",
-        (json.dumps(new_state), session_id),
-    )
-    conn.commit()
-    return JSONResponse({"status": "ok"})
-
 
 # @app.post("/sessions/{session_id}/help")
 # async def help_session(session_id: str):
