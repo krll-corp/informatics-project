@@ -27,7 +27,7 @@ public class NodeManager : MonoBehaviour
     private Button hammerButtonScript;
     private Button saegeButtonScript;
 
-    private void Start()
+    private void Awake()
     {
         openMapFeedback = mapNode.GetComponent<MMF_Player>();
         mapImage = mapNode.GetComponent<Image>();
@@ -96,14 +96,16 @@ public class NodeManager : MonoBehaviour
     }
 
 
+    bool o1 = false;
+    bool o2 = false;
+    bool o3 = false;
+    bool o4 = false;
+
+    int badCount = 0;
+
     public void playerMapSync()
     {
-        bool o1 = false;
-        bool o2 = false;
-        bool o3 = false;
-        bool o4 = false;
-
-        int badCount = 0;
+        Debug.Log("checking..");
 
         if (APIController.gameStateP1.pickup1 && !o1)
         {

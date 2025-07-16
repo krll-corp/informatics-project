@@ -270,6 +270,8 @@ public class APIController : MonoBehaviour
             while (isReading)
                 yield return null;
 
+            gotNewState?.Invoke();
+
             yield return new WaitForSeconds(2f);
         }
     }
