@@ -125,7 +125,7 @@ public class MainMenuEvents : MonoBehaviour
         {
             // Player 1 is connected
 
-            StartCoroutine(APIController.Instance.PollGameStateP1());
+            APIController.Instance.StartCoroutine(APIController.Instance.PollGameStateP1());
 
             APIController.gameStateP2.connected = true;
 
@@ -192,7 +192,7 @@ public class MainMenuEvents : MonoBehaviour
        
         // Initiate polling
 
-        StartCoroutine(APIController.Instance.PollGameStateP2());
+        APIController.Instance.StartCoroutine(APIController.Instance.PollGameStateP2());
 
 
         // mark as connected
