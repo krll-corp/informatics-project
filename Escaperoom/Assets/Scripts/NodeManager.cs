@@ -46,7 +46,6 @@ public class NodeManager : MonoBehaviour
         APIController.gotNewState -= playerMapSync;
     }
 
-
     public void openMap()
     {
         openNode.SetActive(false);
@@ -87,22 +86,22 @@ public class NodeManager : MonoBehaviour
     }
 
 
-    public void hasLevelEnded()
+    public void hasLevel1Ended()
     {
         if (APIController.gameStateP1.pickup1 && APIController.gameStateP1.pickup2 && APIController.gameStateP1.pickup3 && APIController.gameStateP1.pickup4)
         {
             // Load Next Level
             Player2_LoadAnim.instance.fadeOut();
 
-            StartCoroutine(switchHelper());
+            StartCoroutine(switchHelper(5));
         }
 
 }
-    private IEnumerator switchHelper()
+    private IEnumerator switchHelper(int sceneIndex)
     {
         yield return new WaitForSeconds(3f);
 
-        SceneManager.LoadScene(5);
+        SceneManager.LoadScene(sceneIndex);
     }
 
 
@@ -125,7 +124,7 @@ public class NodeManager : MonoBehaviour
             // disable button 3
             hammerButtonScript.interactable = false;
 
-            hasLevelEnded();
+            hasLevel1Ended();
         }
 
         if (APIController.gameStateP1.pickup2 && !o2)
@@ -136,7 +135,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 1
             blumeButtonScript.interactable = false;
-            hasLevelEnded();
+            hasLevel1Ended();
 
         }
 
@@ -148,7 +147,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 4
             saegeButtonScript.interactable = false;
-            hasLevelEnded();
+            hasLevel1Ended();
         }
 
         if (APIController.gameStateP1.pickup4 && !o4)
@@ -159,7 +158,7 @@ public class NodeManager : MonoBehaviour
 
             // disable button 2
             gewehrButtonScript.interactable = false;
-            hasLevelEnded();
+            hasLevel1Ended();
         }
 
         if (APIController.gameStateP1.wrongTarget > badCount)

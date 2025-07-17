@@ -17,6 +17,9 @@ public class MyScriptEditor : Editor
         {
             case Clickable.OnClickList.ActivateGO:
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("activatedGO"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("id"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("content"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("text"));
                 break;
 
             case Clickable.OnClickList.Pickup:

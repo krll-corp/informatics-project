@@ -1,5 +1,6 @@
 using MoreMountains.Feedbacks;
 using Polyperfect.Universal;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,10 @@ public class Clickable : MonoBehaviour
     public OnClickList onClickList = OnClickList.ActivateGO;
 
     public GameObject activatedGO;
+    public int id;
+    public string content;
+    public GameObject text;
+    private TextMeshProUGUI textField;
 
     public int targetLocation;
     public Vector3 pickedScale;
@@ -21,13 +26,21 @@ public class Clickable : MonoBehaviour
 
     public int targetNumber;
 
+
+    private void Start()
+    {
+        if (onClickList == OnClickList.ActivateGO)
+        {
+            textField = text.GetComponent<TextMeshProUGUI>();
+        }
+    }
+
     public void OnClick()
     {
         switch(onClickList)
         {
             case OnClickList.ActivateGO:
                 ActivateGO();
-                PlayerMovement.Instance.enabled = false;
                 break;
 
             case OnClickList.Pickup:
@@ -43,6 +56,8 @@ public class Clickable : MonoBehaviour
 
     void ActivateGO()
     {
+        PlayerMovement.Instance.enabled = false;
+        textField.text = content;
         activatedGO.SetActive(true);
     }
 
