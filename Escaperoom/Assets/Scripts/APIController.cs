@@ -136,6 +136,8 @@ public class APIController : MonoBehaviour
 
     public IEnumerator HealthCheckAndCreateSession()
     {
+        Debug.Log(serverUrl);
+
         // First, check if the server is healthy
         UnityWebRequest healthRequest = UnityWebRequest.Get($"{serverUrl}/health");
         yield return healthRequest.SendWebRequest();

@@ -14,6 +14,7 @@ public class MainMenuEvents : MonoBehaviour
     private Button _joinButton;
 
     private TextField _joinCode;
+    private TextField _ip;
 
     public GameObject waitScreen;
 
@@ -53,6 +54,7 @@ public class MainMenuEvents : MonoBehaviour
 
 
         _joinCode = _document.rootVisualElement.Q("Code") as TextField;
+        _ip = _document.rootVisualElement.Q("IP") as TextField;
 
 
         _hostButton = _document.rootVisualElement.Q("HostButton") as Button;
@@ -75,6 +77,7 @@ public class MainMenuEvents : MonoBehaviour
 
     private void OnPlayerHostClick(ClickEvent e)
     {
+        APIController.Instance.serverUrl = _ip.text;
         APIController.playerID = 0;
 
         StartCoroutine(createSession());
@@ -82,6 +85,7 @@ public class MainMenuEvents : MonoBehaviour
 
     private void OnPlayerJoinClick(ClickEvent e)
     {
+        APIController.Instance.serverUrl = _ip.text;
         APIController.Instance.sessionHash = _joinCode.text;
 
         APIController.playerID = 1;

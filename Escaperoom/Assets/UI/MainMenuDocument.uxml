@@ -3,7 +3,8 @@
     <ui:VisualElement name="MainMenu" enabled="true" style="flex-grow: 1; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; justify-content: center; align-items: center;">
         <ui:Label text="Game Name" name="Title" class="header" style="margin-top: 12px;" />
         <ui:Button text="Host" name="HostButton" class="button" style="-unity-font-style: bold;" />
-        <ui:TextField name="Code" class="input-field" label="" placeholder-text="Join Code eingeben..." />
+        <ui:TextField name="Code" placeholder-text="Join Code eingeben..." class="input-field" style="color: rgb(0, 0, 0);" />
         <ui:Button text="Join" name="JoinButton" class="button" style="-unity-font-style: bold;" />
+        <ui:TextField name="IP" placeholder-text="Server IP eingeben..." class="input-field" style="color: rgb(0, 0, 0);" />
     </ui:VisualElement>
 </ui:UXML>
