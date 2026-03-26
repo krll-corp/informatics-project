@@ -92,12 +92,16 @@ async def health():
     # CPU
     try:
         load = os.getloadavg()[0]
+        cpu_count = os.cpu_count()
+
+        real_load = load / cpu_count
+
         health_status["checks"]["cpu_load"] = {
-            "value": load,
-            "status": "error" if load > 1.0 else "ok",
-            "threshold": 1.0
+            "value": real_load,
+            "status": "error" if real_load > 0.9 else "ok",
+            "threshold": 0.9
         }
-        if load > 1.0:
+        if real_load > 0.9:
             health_status["status"] = "error"
     except Exception as e:
         health_status["checks"]["cpu_load"] = {"status": "error", "error": str(e)}
